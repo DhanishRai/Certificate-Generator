@@ -21,7 +21,7 @@ const Sidebar = ({ collapsed, onToggle }) => {
   return (
     <motion.aside
       animate={{ width: collapsed ? 86 : 256 }}
-      className="h-screen shrink-0 overflow-hidden border-r border-slate-200 bg-white/90 p-4 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90"
+      className="min-h-full shrink-0 overflow-hidden border-r border-slate-200 bg-white/90 p-4 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90"
     >
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-bold text-slate-800 dark:text-white">{collapsed ? "AG" : "Admin Panel"}</h1>

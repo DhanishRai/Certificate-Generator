@@ -1,16 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
+import { FaEnvelope } from "react-icons/fa";
 import Notification from "../components/Notification";
 import Spinner from "../components/Spinner";
+import EmailModal from "../components/modals/EmailModal";
 import AnimatedButton from "../components/ui/AnimatedButton";
 import AnimatedCard from "../components/ui/AnimatedCard";
 import PreviewModal from "../components/ui/PreviewModal";
 import StatCard from "../components/ui/StatCard";
+import Toast from "../components/ui/Toast";
 import { CertificatesIcon, TodayIcon, VerifyCountIcon } from "../components/ui/Icons";
 import TemplateCard from "../components/templates/TemplateCard";
 import { getTemplateById, TEMPLATE_OPTIONS } from "../components/templates/templateOptions";
 import AdminLayout from "../layouts/AdminLayout";
-import { fetchCertificates, generateCertificates } from "../services/certificateService";
+import { fetchCertificates, generateCertificates, sendCertificateEmail } from "../services/certificateService";
 import { getVerificationCount } from "../services/metrics";
 import { listItemVariants } from "../animations/variants";
 
@@ -22,6 +25,10 @@ const DashboardPage = () => {
   const [search, setSearch] = useState("");
   const [selectedTemplate, setSelectedTemplate] = useState("classic");
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [emailModalOpen, setEmailModalOpen] = useState(false);
+  const [selectedCertificate, setSelectedCertificate] = useState(null);
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [emailToast, setEmailToast] = useState("");
   const [verificationCount, setVerificationCount] = useState(0);
   const [notification, setNotification] = useState({ type: "", message: "" });
 
@@ -41,6 +48,12 @@ const DashboardPage = () => {
     loadCertificates();
     setVerificationCount(getVerificationCount());
   }, []);
+
+  useEffect(() => {
+    if (!emailToast) return;
+    const timeoutId = setTimeout(() => setEmailToast(""), 2600);
+    return () => clearTimeout(timeoutId);
+  }, [emailToast]);
 
   const handleOpenPreview = (e) => {
     e.preventDefault();
@@ -71,6 +84,28 @@ const DashboardPage = () => {
     }
   };
 
+  const handleOpenEmailModal = (certificate) => {
+    setSelectedCertificate(certificate);
+    setEmailModalOpen(true);
+  };
+
+  const handleSendEmail = async (payload) => {
+    setSendingEmail(true);
+    try {
+      const data = await sendCertificateEmail(payload);
+      setNotification({ type: "success", message: data.message || "Certificate sent successfully." });
+      setEmailToast("Certificate email sent successfully.");
+      setEmailModalOpen(false);
+    } catch (error) {
+      setNotification({
+        type: "error",
+        message: error.response?.data?.message || "Failed to send certificate email.",
+      });
+    } finally {
+      setSendingEmail(false);
+    }
+  };
+
   const filteredCertificates = useMemo(() => {
     if (!search) return certificates;
     const term = search.toLowerCase();
@@ -84,6 +119,7 @@ const DashboardPage = () => {
 
   return (
     <AdminLayout title="Dashboard">
+      <Toast open={Boolean(emailToast)} message={emailToast} type="success" />
       <div className="space-y-6">
         <section className="grid gap-4 md:grid-cols-3">
           <StatCard label="Total Certificates" value={certificates.length} icon={<CertificatesIcon />} colorClass="text-primary-600" />
@@ -190,12 +226,21 @@ const DashboardPage = () => {
                         {certificate.certificateId}
                       </td>
                       <td className="px-4 py-3">
-                        <AnimatedButton
-                          onClick={() => window.open(certificate.pdfUrl, "_blank", "noopener,noreferrer")}
-                          className="bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
-                        >
-                          Download PDF
-                        </AnimatedButton>
+                        <div className="flex flex-wrap gap-2">
+                          <AnimatedButton
+                            onClick={() => window.open(certificate.pdfUrl, "_blank", "noopener,noreferrer")}
+                            className="bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
+                          >
+                            Download PDF
+                          </AnimatedButton>
+                          <AnimatedButton
+                            onClick={() => handleOpenEmailModal(certificate)}
+                            className="bg-gradient-to-r from-secondary-600 to-primary-600 text-white"
+                          >
+                            <FaEnvelope className="h-3.5 w-3.5" />
+                            Send via Email
+                          </AnimatedButton>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -212,6 +257,14 @@ const DashboardPage = () => {
         onClose={() => setPreviewOpen(false)}
         onConfirm={handleGenerateConfirm}
         loading={submitting}
+      />
+
+      <EmailModal
+        open={emailModalOpen}
+        certificate={selectedCertificate}
+        loading={sendingEmail}
+        onClose={() => setEmailModalOpen(false)}
+        onSend={handleSendEmail}
       />
     </AdminLayout>
   );

@@ -26,3 +26,8 @@ export const verifyCertificate = async (certificateId) => {
   const response = await api.get(`/certificates/${certificateId}`);
   return response.data;
 };
+
+export const sendCertificateEmail = async (payload) => {
+  const response = await api.post("/certificates/send-email", payload);
+  return response.data;
+};

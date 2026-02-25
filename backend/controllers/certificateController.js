@@ -2,8 +2,10 @@ const fs = require("fs");
 const path = require("path");
 const csv = require("csv-parser");
 const { v4: uuidv4 } = require("uuid");
+const mongoose = require("mongoose");
 const Certificate = require("../models/Certificate");
 const { generateCertificatePdf } = require("../utils/pdfGenerator");
+const { getTransporter, buildCertificateEmailHtml } = require("../utils/mailer");
 
 const certificatesDir = path.join(__dirname, "..", "certificates");
 if (!fs.existsSync(certificatesDir)) {
@@ -117,5 +119,68 @@ exports.verifyCertificate = async (req, res) => {
     return res.json({ status: "VALID", certificate });
   } catch (error) {
     return res.status(500).json({ message: "Verification failed.", error: error.message });
+  }
+};
+
+exports.sendCertificateEmail = async (req, res) => {
+  try {
+    const { certificateId, recipientEmail } = req.body;
+
+    if (!certificateId || !recipientEmail) {
+      return res.status(400).json({ message: "certificateId and recipientEmail are required." });
+    }
+
+    const query = [{ certificateId }];
+    if (mongoose.Types.ObjectId.isValid(certificateId)) {
+      query.push({ _id: certificateId });
+    }
+    const certificate = await Certificate.findOne({ $or: query });
+
+    if (!certificate) {
+      return res.status(404).json({ message: "Certificate not found." });
+    }
+
+    const normalizedRecipient = recipientEmail.toLowerCase().trim();
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
+    if (!emailRegex.test(normalizedRecipient)) {
+      return res.status(400).json({ message: "Please enter a valid Gmail address." });
+    }
+
+    const pdfFileName = path.basename(certificate.pdfUrl);
+    const pdfPath = path.join(certificatesDir, pdfFileName);
+    if (!fs.existsSync(pdfPath)) {
+      return res.status(404).json({ message: "Certificate PDF file not found." });
+    }
+
+    const verifyBaseUrl = process.env.VERIFY_BASE_URL || "http://localhost:5173";
+    const verifyUrl = `${verifyBaseUrl.replace(/\/$/, "")}/verify/${certificate.certificateId}`;
+
+    const transporter = getTransporter();
+    const fromEmail = process.env.EMAIL_USER;
+
+    await transporter.sendMail({
+      from: `"Certificate System" <${fromEmail}>`,
+      to: normalizedRecipient,
+      subject: "Your Certificate",
+      html: buildCertificateEmailHtml({
+        recipientEmail: normalizedRecipient,
+        name: certificate.name,
+        event: certificate.event,
+        issueDate: certificate.issueDate,
+        certificateId: certificate.certificateId,
+        verifyUrl,
+      }),
+      attachments: [
+        {
+          filename: `${certificate.certificateId}.pdf`,
+          path: pdfPath,
+          contentType: "application/pdf",
+        },
+      ],
+    });
+
+    return res.json({ message: `Certificate sent successfully to ${normalizedRecipient}.` });
+  } catch (error) {
+    return res.status(500).json({ message: "Failed to send certificate email.", error: error.message });
   }
 };

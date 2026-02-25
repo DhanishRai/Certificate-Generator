@@ -26,6 +26,14 @@ const certificateSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    templateId: {
+      type: Number,
+      default: 1,
+    },
+    templateType: {
+      type: String,
+      default: "classic",
+    },
     createdAt: {
       type: Date,
       default: Date.now,

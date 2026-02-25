@@ -5,10 +5,9 @@ export const loginAdmin = async (payload) => {
   return response.data;
 };
 
-export const generateCertificates = async (file, template = "classic") => {
+export const generateCertificates = async (file) => {
   const formData = new FormData();
   formData.append("file", file);
-  formData.append("template", template);
 
   const response = await api.post("/certificates/generate", formData, {
     headers: { "Content-Type": "multipart/form-data" },
@@ -29,5 +28,10 @@ export const verifyCertificate = async (certificateId) => {
 
 export const sendCertificateEmail = async (payload) => {
   const response = await api.post("/certificates/send-email", payload);
+  return response.data;
+};
+
+export const deleteCertificate = async (certificateId) => {
+  const response = await api.delete(`/certificates/${certificateId}`);
   return response.data;
 };

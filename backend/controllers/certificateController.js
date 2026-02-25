@@ -184,3 +184,24 @@ exports.sendCertificateEmail = async (req, res) => {
     return res.status(500).json({ message: "Failed to send certificate email.", error: error.message });
   }
 };
+
+exports.deleteCertificate = async (req, res) => {
+  try {
+    const { certificateId } = req.params;
+    const certificate = await Certificate.findOneAndDelete({ certificateId });
+
+    if (!certificate) {
+      return res.status(404).json({ message: "Certificate not found." });
+    }
+
+    const pdfFileName = path.basename(certificate.pdfUrl || "");
+    const pdfPath = path.join(certificatesDir, pdfFileName);
+    if (pdfFileName && fs.existsSync(pdfPath)) {
+      fs.unlinkSync(pdfPath);
+    }
+
+    return res.json({ message: "Certificate deleted successfully." });
+  } catch (error) {
+    return res.status(500).json({ message: "Failed to delete certificate.", error: error.message });
+  }
+};

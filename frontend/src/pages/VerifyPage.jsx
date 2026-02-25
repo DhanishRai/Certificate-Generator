@@ -18,6 +18,14 @@ const VerifyPage = () => {
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
 
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+      return;
+    }
+    navigate(localStorage.getItem("token") ? "/dashboard" : "/");
+  };
+
   const checkCertificate = async (id) => {
     if (!id?.trim()) return;
 
@@ -92,10 +100,10 @@ const VerifyPage = () => {
               <div className="mt-3">
                 <AnimatedButton
                   type="button"
-                  onClick={() => navigate("/")}
+                  onClick={handleBack}
                   className="border border-slate-300 bg-white text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
                 >
-                  Back to Home
+                  Back
                 </AnimatedButton>
               </div>
             </div>
@@ -128,10 +136,10 @@ const VerifyPage = () => {
               <div className="mt-4">
                 <AnimatedButton
                   type="button"
-                  onClick={() => navigate("/")}
+                  onClick={handleBack}
                   className="border border-slate-300 bg-white text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
                 >
-                  Back to Home
+                  Back
                 </AnimatedButton>
               </div>
             </motion.div>

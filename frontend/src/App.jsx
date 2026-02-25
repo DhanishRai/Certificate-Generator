@@ -1,6 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
-import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
 import VerifyPage from "./pages/VerifyPage";
@@ -14,7 +13,7 @@ function App() {
     <AnimatePresence mode="wait">
       <motion.div key={location.pathname} variants={pageVariants} initial="initial" animate="animate" exit="exit">
         <Routes location={location}>
-          <Route path="/" element={<HomePage />} />
+          <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<LoginPage />} />
           <Route
             path="/dashboard"
@@ -24,8 +23,22 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route path="/verify" element={<VerifyPage />} />
-          <Route path="/verify/:certificateId" element={<VerifyPage />} />
+          <Route
+            path="/verify"
+            element={
+              <ProtectedRoute>
+                <VerifyPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/verify/:certificateId"
+            element={
+              <ProtectedRoute>
+                <VerifyPage />
+              </ProtectedRoute>
+            }
+          />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </motion.div>

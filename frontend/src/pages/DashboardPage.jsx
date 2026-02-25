@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { motion } from "framer-motion";
 import { FaEnvelope } from "react-icons/fa";
 import Notification from "../components/Notification";
 import Spinner from "../components/Spinner";
@@ -10,12 +9,13 @@ import PreviewModal from "../components/ui/PreviewModal";
 import StatCard from "../components/ui/StatCard";
 import Toast from "../components/ui/Toast";
 import { CertificatesIcon, TodayIcon, VerifyCountIcon } from "../components/ui/Icons";
-import TemplateCard from "../components/templates/TemplateCard";
-import { getTemplateById, TEMPLATE_OPTIONS } from "../components/templates/templateOptions";
 import AdminLayout from "../layouts/AdminLayout";
-import { fetchCertificates, generateCertificates, sendCertificateEmail } from "../services/certificateService";
+import {
+  fetchCertificates,
+  generateCertificates,
+  sendCertificateEmail,
+} from "../services/certificateService";
 import { getVerificationCount } from "../services/metrics";
-import { listItemVariants } from "../animations/variants";
 
 const DashboardPage = () => {
   const [csvFile, setCsvFile] = useState(null);
@@ -23,7 +23,6 @@ const DashboardPage = () => {
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [search, setSearch] = useState("");
-  const [selectedTemplate, setSelectedTemplate] = useState("classic");
   const [previewOpen, setPreviewOpen] = useState(false);
   const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [selectedCertificate, setSelectedCertificate] = useState(null);
@@ -69,7 +68,7 @@ const DashboardPage = () => {
     setNotification({ type: "", message: "" });
 
     try {
-      const result = await generateCertificates(csvFile, selectedTemplate);
+      const result = await generateCertificates(csvFile);
       setNotification({ type: "success", message: result.message });
       setCsvFile(null);
       setPreviewOpen(false);
@@ -139,21 +138,6 @@ const DashboardPage = () => {
                 onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
                 className="block w-full rounded-lg border border-slate-300 bg-white p-2 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
               />
-
-              <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Template Selection</label>
-                <select
-                  value={selectedTemplate}
-                  onChange={(e) => setSelectedTemplate(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-800"
-                >
-                  {TEMPLATE_OPTIONS.map((template) => (
-                    <option key={template.id} value={template.id}>
-                      {template.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
             </div>
 
             <div className="flex items-end">
@@ -163,18 +147,6 @@ const DashboardPage = () => {
               </AnimatedButton>
             </div>
           </form>
-
-          <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            {TEMPLATE_OPTIONS.map((template, index) => (
-              <motion.div key={template.id} custom={index} variants={listItemVariants} initial="initial" animate="animate">
-                <TemplateCard
-                  template={template}
-                  selected={selectedTemplate === template.id}
-                  onSelect={setSelectedTemplate}
-                />
-              </motion.div>
-            ))}
-          </div>
 
           <div className="mt-4">
             <Notification type={notification.type} message={notification.message} />
@@ -253,7 +225,6 @@ const DashboardPage = () => {
 
       <PreviewModal
         open={previewOpen}
-        template={getTemplateById(selectedTemplate)}
         onClose={() => setPreviewOpen(false)}
         onConfirm={handleGenerateConfirm}
         loading={submitting}

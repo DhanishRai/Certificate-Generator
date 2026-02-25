@@ -1,8 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import AnimatedButton from "./AnimatedButton";
-import TemplateCard from "../templates/TemplateCard";
 
-const PreviewModal = ({ open, template, onClose, onConfirm, loading }) => {
+const PreviewModal = ({ open, onClose, onConfirm, loading }) => {
   return (
     <AnimatePresence>
       {open ? (
@@ -21,12 +20,8 @@ const PreviewModal = ({ open, template, onClose, onConfirm, loading }) => {
           >
             <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Confirm Certificate Generation</h3>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              This preview shows your selected template style before generation.
+              This will generate certificates from your uploaded CSV file.
             </p>
-
-            <div className="mt-4">
-              <TemplateCard template={template} selected />
-            </div>
 
             <div className="mt-6 flex justify-end gap-3">
               <AnimatedButton

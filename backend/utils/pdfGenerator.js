@@ -102,6 +102,77 @@ function drawMedal(doc, centerX, centerY) {
   doc.restore();
 }
 
+function getTemplateConfig(pageWidth, pageHeight) {
+  return {
+    titleY: 145,
+    subtitleY: 290,
+    nameY: 350,
+    dividerY: 435,
+    detailsY: 456,
+    qrX: pageWidth - 186,
+    qrY: pageHeight - 192,
+    qrLabelX: pageWidth - 190,
+    certIdY: pageHeight - 80,
+    medalY: 635,
+  };
+}
+
+function drawCertificateText(doc, { certificateId, name, event, issueDate, qrImageBuffer, layout, pageWidth }) {
+  const nameText = name.length > 24 ? 44 : 54;
+
+  doc.font("Times-Bold").fontSize(58).fillColor("#0f172a").text("Certificate of Achievement", 0, layout.titleY, {
+    width: pageWidth,
+    align: "center",
+  });
+  doc
+    .font("Helvetica-Bold")
+    .fontSize(21)
+    .fillColor("#111827")
+    .text("This certificate is proudly awarded to", 0, layout.subtitleY, { width: pageWidth, align: "center" });
+  doc
+    .font("Times-BoldItalic")
+    .fontSize(nameText)
+    .fillColor("#111827")
+    .text(name, 0, layout.nameY, { width: pageWidth, align: "center" });
+  doc.moveTo(145, layout.dividerY).lineTo(pageWidth - 145, layout.dividerY).lineWidth(1.3).strokeColor("#111827").stroke();
+
+  doc
+    .font("Helvetica-Oblique")
+    .fontSize(19)
+    .fillColor("#1f2937")
+    .text(
+      `For outstanding participation in ${event} on ${new Date(issueDate).toLocaleDateString()}.`,
+      78,
+      layout.detailsY,
+      { width: pageWidth - 156, align: "center" }
+    );
+
+  drawMedal(doc, pageWidth / 2, layout.medalY);
+
+  // White padding improves scanner contrast on printed and digital copies.
+  doc.save();
+  doc.roundedRect(layout.qrX - 8, layout.qrY - 8, 118, 118, 10).fill("#ffffff");
+  doc.restore();
+
+  doc.image(qrImageBuffer, layout.qrX, layout.qrY, {
+    fit: [102, 102],
+    align: "center",
+    valign: "center",
+  });
+
+  doc
+    .font("Helvetica")
+    .fontSize(9)
+    .fillColor("#374151")
+    .text("Scan to verify", layout.qrLabelX, layout.qrY + 106, { width: 118, align: "center" });
+
+  doc
+    .font("Helvetica")
+    .fontSize(10)
+    .fillColor("#4b5563")
+    .text(`Certificate ID: ${certificateId}`, 50, layout.certIdY, { width: 320, align: "left" });
+}
+
 exports.generateCertificatePdf = async ({
   outputPath,
   certificateId,
@@ -109,8 +180,24 @@ exports.generateCertificatePdf = async ({
   event,
   issueDate,
   verificationUrl,
+  templateType = "classic",
 }) => {
-  const qrDataUrl = await QRCode.toDataURL(verificationUrl, { width: 180, margin: 1 });
+  const issueDateLabel = new Date(issueDate).toLocaleDateString();
+  const qrPayload = [
+    "Certificate Verification",
+    `ID: ${certificateId}`,
+    `Name: ${name}`,
+    `Event: ${event}`,
+    `Date: ${issueDateLabel}`,
+    `Verify: ${verificationUrl}`,
+  ].join("\n");
+
+  const qrDataUrl = await QRCode.toDataURL(qrPayload, {
+    width: 280,
+    margin: 2,
+    errorCorrectionLevel: "H",
+    color: { dark: "#000000", light: "#FFFFFF" },
+  });
   const qrImageBuffer = Buffer.from(qrDataUrl.split(",")[1], "base64");
 
   await new Promise((resolve, reject) => {
@@ -118,60 +205,21 @@ exports.generateCertificatePdf = async ({
     const stream = fs.createWriteStream(outputPath);
     const pageWidth = doc.page.width;
     const pageHeight = doc.page.height;
+    const layout = getTemplateConfig(pageWidth, pageHeight);
 
     doc.pipe(stream);
     drawRibbonCorners(doc, pageWidth, pageHeight);
     drawDecorativeWaves(doc);
 
-    const nameText = name.length > 24 ? 44 : 54;
-    const detailsY = 456;
-
-    doc.font("Times-Bold").fontSize(58).fillColor("#0f172a").text("Certificate of Achievement", 0, 145, {
-      width: pageWidth,
-      align: "center",
+    drawCertificateText(doc, {
+      certificateId,
+      name,
+      event,
+      issueDate,
+      qrImageBuffer,
+      layout,
+      pageWidth,
     });
-    doc
-      .font("Helvetica-Bold")
-      .fontSize(21)
-      .fillColor("#111827")
-      .text("This certificate is proudly awarded to", 0, 290, { width: pageWidth, align: "center" });
-    doc
-      .font("Times-BoldItalic")
-      .fontSize(nameText)
-      .fillColor("#111827")
-      .text(name, 0, 350, { width: pageWidth, align: "center" });
-    doc.moveTo(145, 435).lineTo(pageWidth - 145, 435).lineWidth(1.3).strokeColor("#111827").stroke();
-
-    doc
-      .font("Helvetica-Oblique")
-      .fontSize(19)
-      .fillColor("#1f2937")
-      .text(
-        `For outstanding participation in ${event} on ${new Date(issueDate).toLocaleDateString()}.`,
-        78,
-        detailsY,
-        { width: pageWidth - 156, align: "center" }
-      );
-
-    drawMedal(doc, pageWidth / 2, 635);
-
-    doc.image(qrImageBuffer, pageWidth - 170, pageHeight - 180, {
-      fit: [95, 95],
-      align: "center",
-      valign: "center",
-    });
-
-    doc
-      .font("Helvetica")
-      .fontSize(9)
-      .fillColor("#374151")
-      .text("Scan to verify", pageWidth - 178, pageHeight - 82, { width: 110, align: "center" });
-
-    doc
-      .font("Helvetica")
-      .fontSize(10)
-      .fillColor("#4b5563")
-      .text(`Certificate ID: ${certificateId}`, 50, pageHeight - 80, { width: 320, align: "left" });
 
     doc.end();
     stream.on("finish", resolve);

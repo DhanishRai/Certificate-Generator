@@ -2,14 +2,14 @@ import { motion } from "framer-motion";
 import { FaCertificate, FaHome, FaLock, FaSearch } from "react-icons/fa";
 import { Link, useLocation } from "react-router-dom";
 
-const links = [
-  { to: "/", label: "Home", icon: FaHome },
-  { to: "/verify", label: "Verify Certificate", icon: FaSearch },
-  { to: "/login", label: "Admin Login", icon: FaLock },
-];
-
 const Navbar = () => {
   const location = useLocation();
+  const isLoggedIn = Boolean(localStorage.getItem("token"));
+  const links = [
+    { to: "/", label: "Home", icon: FaHome },
+    { to: "/verify", label: "Verify Certificate", icon: FaSearch },
+    { to: isLoggedIn ? "/dashboard" : "/login", label: isLoggedIn ? "Dashboard" : "Admin Login", icon: FaLock },
+  ];
 
   return (
     <motion.header

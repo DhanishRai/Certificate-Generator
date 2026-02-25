@@ -8,6 +8,7 @@ const {
   getCertificates,
   verifyCertificate,
   sendCertificateEmail,
+  deleteCertificate,
 } = require("../controllers/certificateController");
 
 const router = express.Router();
@@ -31,6 +32,7 @@ const upload = multer({
 router.post("/generate", authMiddleware, upload.single("file"), generateCertificates);
 router.get("/", authMiddleware, getCertificates);
 router.post("/send-email", authMiddleware, sendCertificateEmail);
+router.delete("/:certificateId", authMiddleware, deleteCertificate);
 router.get("/:certificateId", verifyCertificate);
 
 module.exports = router;

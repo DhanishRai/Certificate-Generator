@@ -39,6 +39,7 @@ app.use(
 app.use(express.json());
 
 app.use("/certificates", express.static(path.join(__dirname, "certificates")));
+app.use("/templates", express.static(path.join(__dirname, "templates")));
 app.use("/api/auth", authRoutes);
 app.use("/api/certificates", certificateRoutes);
 

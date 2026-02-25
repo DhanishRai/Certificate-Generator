@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply antialiased bg-slate-100 text-slate-900 dark:bg-slate-950 dark:text-slate-100;
+}
+
+#root {
+  @apply min-h-screen;
+}
+
+* {
+  @apply selection:bg-primary-100 selection:text-primary-700 dark:selection:bg-primary-600 dark:selection:text-white;
+}
